@@ -59,5 +59,4 @@ const DetailedFeaturesSection = () => {
   );
 };
 
-
 export default DetailedFeaturesSection;
