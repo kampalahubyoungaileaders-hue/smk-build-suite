@@ -1,39 +1,45 @@
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import site5 from "@/assets/site-5.png";
 
 const CTASection = () => {
   return (
-    <section className="py-20 md:py-28 bg-primary">
-      <div className="container text-center">
-        <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-          Ready to Transform Your Construction Management?
-        </h2>
-        <p className="text-lg text-primary-foreground/80 mb-3 max-w-xl mx-auto">
-          Join SMK clients who are delivering projects on time and within budget
+    <section id="contact" className="relative py-20 md:py-28 overflow-hidden">
+      <div className="absolute inset-0">
+        <img src={site5} alt="Construction" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-primary/85" />
+      </div>
+
+      <div className="container relative z-10 text-center">
+        <p className="text-accent font-semibold text-sm uppercase tracking-wider mb-3">
+          Get In Touch
         </p>
-        <p className="text-sm text-primary-foreground/50 italic mb-8">
+        <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4 max-w-xl mx-auto">
+          Our approach is always to begin with the customer's needs in mind. We're a solutions centred company.
+        </h2>
+        <p className="text-primary-foreground/60 text-sm italic mb-8">
           "We Deliver Beyond Your Dream"
         </p>
 
-        <div className="flex flex-wrap justify-center gap-4 mb-6">
+        <div className="flex flex-wrap justify-center gap-4">
           <Button
             size="lg"
-            className="bg-smk-red text-accent-foreground hover:bg-smk-red-dark rounded-full px-8 font-bold h-12 shadow-lg"
+            className="bg-accent text-accent-foreground hover:bg-smk-red-dark rounded px-8 font-bold h-12"
           >
-            Start Your Free Trial Today <ArrowRight className="ml-2 h-5 w-5" />
+            Contact Us
           </Button>
           <Button
             size="lg"
             variant="outline"
-            className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 rounded-full px-8 font-semibold h-12"
+            className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 rounded px-8 font-semibold h-12"
           >
-            Schedule a Demo
+            Let's Talk
           </Button>
         </div>
 
-        <p className="text-xs text-primary-foreground/50">
-          No credit card required · 14-day free trial · Cancel anytime
-        </p>
+        <div className="flex flex-wrap justify-center gap-8 mt-10 text-primary-foreground/70 text-sm">
+          <span>WhatsApp: +256 752 981 600</span>
+          <span>Phone: +256 705 070 635</span>
+        </div>
       </div>
     </section>
   );

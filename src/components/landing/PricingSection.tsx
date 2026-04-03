@@ -1,116 +1,68 @@
-import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import site2 from "@/assets/site-2.png";
+import site4 from "@/assets/site-4.png";
+import render1 from "@/assets/render-1.png";
+import interior1 from "@/assets/interior-1.png";
 
-const plans = [
+const projects = [
   {
-    name: "Starter",
-    price: "Free",
-    description: "Perfect for getting started",
-    features: [
-      "Up to 5 projects",
-      "Basic task management",
-      "Up to 10 team members",
-      "Simple budget tracking",
-      "Basic reporting",
-    ],
-    cta: "Start Free",
-    featured: false,
-    variant: "navy" as const,
+    image: render1,
+    title: "SMK Heights Residential",
+    category: "Residential",
+    location: "Kampala, Uganda",
   },
   {
-    name: "Professional",
-    price: "UGX 250,000",
-    period: "/month",
-    description: "Best for growing construction companies",
-    badge: "Most Popular",
-    features: [
-      "Unlimited projects",
-      "Advanced Gantt charts",
-      "Unlimited team members",
-      "Complete budget & cost management",
-      "Advanced reporting & analytics",
-      "Priority support",
-    ],
-    cta: "Start Free Trial",
-    featured: true,
-    variant: "red" as const,
+    image: site4,
+    title: "Nakasero Office Complex",
+    category: "Commercial",
+    location: "Nakasero, Kampala",
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    description: "For large-scale operations",
-    features: [
-      "Everything in Professional",
-      "Custom integrations & API",
-      "Dedicated account manager",
-      "Custom workflows & reports",
-      "Advanced security & SSO",
-      "White-label options",
-    ],
-    cta: "Contact Sales",
-    featured: false,
-    variant: "navy" as const,
+    image: interior1,
+    title: "Interior Fit-Out Works",
+    category: "Interior Design",
+    location: "Kampala, Uganda",
+  },
+  {
+    image: site2,
+    title: "Infrastructure Development",
+    category: "Civil Works",
+    location: "Western Region",
   },
 ];
 
 const PricingSection = () => {
   return (
-    <section id="pricing" className="py-20 md:py-28 bg-background">
+    <section id="projects" className="py-20 md:py-28 bg-surface">
       <div className="container">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Transparent Pricing for Every Size
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            Scale your success with flexible pricing plans
+          <p className="text-accent font-semibold text-sm uppercase tracking-wider mb-3">
+            Our Portfolio
           </p>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            Featured Projects
+          </h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative rounded-2xl p-8 border transition-all ${
-                plan.featured
-                  ? "border-accent shadow-xl scale-[1.03] bg-card"
-                  : "border-border bg-card hover:shadow-md"
-              }`}
-            >
-              {plan.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-bold px-4 py-1 rounded-full">
-                  {plan.badge}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {projects.map((p) => (
+            <div key={p.title} className="group overflow-hidden rounded bg-card border border-border">
+              <div className="relative h-56 overflow-hidden">
+                <img
+                  src={p.image}
+                  alt={p.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute top-3 left-3 bg-accent text-accent-foreground text-xs font-semibold px-3 py-1 rounded">
+                  {p.category}
                 </div>
-              )}
-              <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
-              <div className="mt-6 mb-6">
-                <span className="text-3xl font-extrabold text-foreground">{plan.price}</span>
-                {plan.period && <span className="text-muted-foreground text-sm">{plan.period}</span>}
               </div>
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className={`h-4 w-4 mt-0.5 flex-shrink-0 ${plan.featured ? "text-accent" : "text-primary"}`} />
-                    <span className="text-foreground">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                className={`w-full rounded-full font-bold ${
-                  plan.featured
-                    ? "bg-accent text-accent-foreground hover:bg-smk-red-dark"
-                    : "bg-primary text-primary-foreground hover:bg-navy-dark"
-                }`}
-              >
-                {plan.cta}
-              </Button>
+              <div className="p-4">
+                <h3 className="font-bold text-foreground mb-1">{p.title}</h3>
+                <p className="text-xs text-muted-foreground">{p.location}</p>
+              </div>
             </div>
           ))}
         </div>
-
-        <p className="text-center text-sm text-muted-foreground mt-10">
-          30-day money-back guarantee · No questions asked
-        </p>
       </div>
     </section>
   );

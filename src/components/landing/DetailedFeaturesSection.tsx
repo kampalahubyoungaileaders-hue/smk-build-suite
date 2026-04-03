@@ -1,101 +1,58 @@
-import { CheckCircle2 } from "lucide-react";
-import site3 from "@/assets/site-3.png";
-import site4 from "@/assets/site-4.png";
+import { Button } from "@/components/ui/button";
 import site5 from "@/assets/site-5.png";
-
-const rows = [
-  {
-    image: site4,
-    alt: "Visual timeline management",
-    headline: "Visual Timeline Management",
-    description:
-      "Never miss a deadline. Our Gantt charts give you complete visibility into project schedules, dependencies, and the critical path.",
-    benefits: [
-      "Drag-and-drop task scheduling",
-      "Automatic dependency tracking",
-      "Critical path visualization",
-      "Milestone tracking",
-    ],
-    variant: "navy" as const,
-    reverse: false,
-  },
-  {
-    image: site5,
-    alt: "Complete financial control",
-    headline: "Complete Financial Control",
-    description:
-      "Know exactly where every shilling is going. Track costs by category, manage change orders, and forecast final project costs with confidence.",
-    benefits: [
-      "Real-time expense tracking",
-      "Budget vs. actual analysis",
-      "Change order management",
-      "Cost forecasting",
-    ],
-    variant: "red" as const,
-    reverse: true,
-  },
-  {
-    image: site3,
-    alt: "Unified team communication",
-    headline: "Unified Team Communication",
-    description:
-      "Keep your entire team connected. From site supervisors to finance teams, everyone has instant access to updates, photos, and task assignments.",
-    benefits: [
-      "Real-time task notifications",
-      "Photo documentation system",
-      "Instant messaging",
-      "Document sharing",
-    ],
-    variant: "navy" as const,
-    reverse: false,
-  },
-];
 
 const DetailedFeaturesSection = () => {
   return (
-    <section className="py-20 md:py-28 bg-background">
+    <section id="about" className="py-20 md:py-28 bg-surface">
       <div className="container">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-foreground">
-          Why SMK Teams Choose This Platform
-        </h2>
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Text */}
+          <div className="space-y-6">
+            <p className="text-accent font-semibold text-sm uppercase tracking-wider">
+              About SMK Technical Services
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+              Going Beyond
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              At SMK Technical Services & Real Estates Solutions Ltd, we combine engineering expertise with a passion for excellence. From large-scale infrastructure to bespoke residential projects, our team delivers results that exceed expectations — on schedule and within budget.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              With years of experience across Uganda and the region, we've built a reputation for reliability, quality workmanship, and client-first project management. Our approach is always to begin with the customer's needs in mind.
+            </p>
 
-        <div className="space-y-24">
-          {rows.map((row) => (
-            <div
-              key={row.headline}
-              className={`grid lg:grid-cols-2 gap-12 items-center ${row.reverse ? "lg:flex-row-reverse" : ""}`}
-            >
-              <div className={row.reverse ? "lg:order-2" : ""}>
-                <img
-                  src={row.image}
-                  alt={row.alt}
-                  className="rounded-2xl shadow-xl object-cover w-full h-72 md:h-80"
-                />
+            <div className="flex items-center gap-8 pt-4">
+              <div>
+                <div className="text-3xl font-extrabold text-accent">150+</div>
+                <div className="text-sm text-muted-foreground">Projects Completed</div>
               </div>
-              <div className={row.reverse ? "lg:order-1" : ""}>
-                <h3
-                  className={`text-2xl md:text-3xl font-bold mb-4 ${
-                    row.variant === "navy" ? "text-primary" : "text-accent"
-                  }`}
-                >
-                  {row.headline}
-                </h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">{row.description}</p>
-                <ul className="space-y-3">
-                  {row.benefits.map((b) => (
-                    <li key={b} className="flex items-center gap-3">
-                      <CheckCircle2
-                        className={`h-5 w-5 flex-shrink-0 ${
-                          row.variant === "navy" ? "text-primary" : "text-accent"
-                        }`}
-                      />
-                      <span className="text-foreground font-medium">{b}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="h-10 w-px bg-border" />
+              <div>
+                <div className="text-3xl font-extrabold text-primary">98%</div>
+                <div className="text-sm text-muted-foreground">Client Satisfaction</div>
               </div>
             </div>
-          ))}
+
+            <a href="#contact">
+              <Button className="bg-accent text-accent-foreground hover:bg-smk-red-dark rounded px-8 font-bold h-11 mt-2">
+                Learn More
+              </Button>
+            </a>
+          </div>
+
+          {/* Images */}
+          <div className="relative">
+            <img
+              src={site5}
+              alt="SMK construction project"
+              className="w-full h-80 object-cover rounded"
+            />
+            <div className="absolute -bottom-6 -left-4 bg-primary text-primary-foreground p-4 rounded hidden md:block">
+              <div className="text-xs text-primary-foreground/70 mb-1">Established</div>
+              <div className="text-2xl font-extrabold">SMK</div>
+              <div className="text-xs text-primary-foreground/70">Uganda</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
