@@ -1,5 +1,5 @@
+import { Button } from "@/components/ui/button";
 import site5 from "@/assets/site-5.png";
-import interior1 from "@/assets/interior-1.png";
 
 const DetailedFeaturesSection = () => {
   return (
