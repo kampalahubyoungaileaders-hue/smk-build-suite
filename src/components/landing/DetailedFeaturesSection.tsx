@@ -59,7 +59,5 @@ const DetailedFeaturesSection = () => {
   );
 };
 
-// Need Button import
-import { Button } from "@/components/ui/button";
 
 export default DetailedFeaturesSection;
