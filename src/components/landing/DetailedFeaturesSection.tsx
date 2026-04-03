@@ -33,9 +33,11 @@ const DetailedFeaturesSection = () => {
               </div>
             </div>
 
-            <Button href="#contact" className="bg-accent text-accent-foreground hover:bg-smk-red-dark rounded px-8 font-bold h-11 mt-2 inline-flex items-center">
-              Learn More
-            </Button>
+            <a href="#contact">
+              <Button className="bg-accent text-accent-foreground hover:bg-smk-red-dark rounded px-8 font-bold h-11 mt-2">
+                Learn More
+              </Button>
+            </a>
           </div>
 
           {/* Images */}
