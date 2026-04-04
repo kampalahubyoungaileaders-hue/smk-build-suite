@@ -14,7 +14,7 @@ const services = [
     image: site4,
     title: "Projects",
     description:
-      "End-to-end project management from planning through completion — on time and within budget.",
+      "End-to-end project management from planning through completion, on time and within budget.",
     number: "02",
   },
   {

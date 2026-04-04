@@ -48,8 +48,8 @@ const DetailedFeaturesSection = () => {
               className="w-full h-80 object-cover rounded"
             />
             <div className="absolute -bottom-6 -left-4 bg-primary text-primary-foreground p-4 rounded hidden md:block">
-              <div className="text-xs text-primary-foreground/70 mb-1">Established</div>
-              <div className="text-2xl font-extrabold">SMK</div>
+              <div className="text-xs text-primary-foreground/70 mb-1">Est.</div>
+              <div className="text-2xl font-extrabold">2024</div>
               <div className="text-xs text-primary-foreground/70">Uganda</div>
             </div>
           </div>
