@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import smkLogo from "@/assets/smk-logo.jpeg";
@@ -34,9 +35,11 @@ const Navbar = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button className="bg-accent text-accent-foreground hover:bg-smk-red-dark font-semibold rounded px-6">
-            Get a Quote
-          </Button>
+          <Link to="/auth">
+            <Button className="bg-accent text-accent-foreground hover:bg-smk-red-dark font-semibold rounded px-6">
+              Get a Quote
+            </Button>
+          </Link>
         </div>
 
         <button

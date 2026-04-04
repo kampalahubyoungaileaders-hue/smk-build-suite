@@ -14,7 +14,7 @@ const CTASection = () => {
           Get In Touch
         </p>
         <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4 max-w-xl mx-auto">
-          Our approach is always to begin with the customer's needs in mind. We're a solutions centred company.
+          Our approach is always to begin with the customer's needs in mind. We are a solutions centred company.
         </h2>
         <p className="text-primary-foreground/60 text-sm italic mb-8">
           "We Deliver Beyond Your Dream"

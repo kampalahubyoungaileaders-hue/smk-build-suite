@@ -15,7 +15,7 @@ const HeroSection = () => {
 
       <div className="container relative z-10 py-20 md:py-28">
         <div className="max-w-2xl space-y-6">
-          <p className="text-accent font-semibold text-sm uppercase tracking-wider">
+          <p className="text-accent font-bold text-base uppercase tracking-wider drop-shadow-lg">
             SMK Technical Services & Real Estates Solutions
           </p>
 
@@ -25,7 +25,7 @@ const HeroSection = () => {
           </h1>
 
           <p className="text-primary-foreground/80 text-lg max-w-lg leading-relaxed">
-            We deliver beyond your dream — professional construction, project management, and real estate solutions built on trust, quality, and precision.
+            We deliver beyond your dream. Professional construction, project management, and real estate solutions built on trust, quality, and precision.
           </p>
 
           <div className="flex flex-wrap gap-4 pt-2">

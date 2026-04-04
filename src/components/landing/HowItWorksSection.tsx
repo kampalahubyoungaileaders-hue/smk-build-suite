@@ -11,7 +11,7 @@ const capabilities = [
     description: "Putting our clients' interests at the heart of every decision we make.",
   },
   {
-    title: "Technical My",
+    title: "Technical Mastery",
     description: "Leveraging cutting-edge techniques and modern construction methodologies.",
   },
   {
