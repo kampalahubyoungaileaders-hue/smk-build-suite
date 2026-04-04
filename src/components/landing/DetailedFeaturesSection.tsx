@@ -18,7 +18,7 @@ const DetailedFeaturesSection = () => {
               At SMK Technical Services & Real Estates Solutions Ltd, we combine engineering expertise with a passion for excellence. From large-scale infrastructure to bespoke residential projects, our team delivers results that exceed expectations, on schedule and within budget.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              With years of experience across Uganda and the region, we've built a reputation for reliability, quality workmanship, and client-first project management. Our approach is always to begin with the customer's needs in mind.
+              Founded in 2024, we've quickly built a reputation for reliability, quality workmanship, and client-first project management across Uganda and the region.
             </p>
 
             <div className="flex items-center gap-8 pt-4">
