@@ -15,7 +15,7 @@ const HeroSection = () => {
 
       <div className="container relative z-10 py-20 md:py-28">
         <div className="max-w-2xl space-y-6">
-          <p className="text-accent font-semibold text-sm uppercase tracking-wider">
+          <p className="text-accent font-bold text-base uppercase tracking-wider drop-shadow-lg">
             SMK Technical Services & Real Estates Solutions
           </p>
 
