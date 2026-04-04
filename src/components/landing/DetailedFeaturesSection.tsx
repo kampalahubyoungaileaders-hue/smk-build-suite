@@ -15,7 +15,7 @@ const DetailedFeaturesSection = () => {
               Going Beyond
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              At SMK Technical Services & Real Estates Solutions Ltd, we combine engineering expertise with a passion for excellence. From large-scale infrastructure to bespoke residential projects, our team delivers results that exceed expectations — on schedule and within budget.
+              At SMK Technical Services & Real Estates Solutions Ltd, we combine engineering expertise with a passion for excellence. From large-scale infrastructure to bespoke residential projects, our team delivers results that exceed expectations, on schedule and within budget.
             </p>
             <p className="text-muted-foreground leading-relaxed">
               With years of experience across Uganda and the region, we've built a reputation for reliability, quality workmanship, and client-first project management. Our approach is always to begin with the customer's needs in mind.
