@@ -14,6 +14,184 @@ export type Database = {
   }
   public: {
     Tables: {
+      expenses: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          category: string
+          created_at: string
+          description: string | null
+          expense_date: string
+          id: string
+          project_id: string
+          receipt_url: string | null
+          status: string
+          submitted_by: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number
+          approved_by?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          project_id: string
+          receipt_url?: string | null
+          status?: string
+          submitted_by?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          project_id?: string
+          receipt_url?: string | null
+          status?: string
+          submitted_by?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          paid_date: string | null
+          project_id: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          paid_date?: string | null
+          project_id: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          paid_date?: string | null
+          project_id?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          invoice_id: string | null
+          payment_date: string
+          payment_method: string | null
+          payment_type: string
+          project_id: string
+          recorded_by: string | null
+          reference_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          payment_type?: string
+          project_id: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          payment_type?: string
+          project_id?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
