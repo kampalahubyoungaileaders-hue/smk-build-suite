@@ -457,6 +457,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_staff: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      set_user_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

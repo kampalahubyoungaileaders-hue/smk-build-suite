@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import smkLogo from "@/assets/smk-logo.jpeg";
+import Logo from "@/components/brand/Logo";
+import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { label: "Home", href: "#home" },
   { label: "Services", href: "#services" },
   { label: "About", href: "#about" },
   { label: "Projects", href: "#projects" },
@@ -14,59 +14,75 @@ const navLinks = [
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-      <div className="container flex h-16 items-center justify-between md:h-18">
-        <a href="#home" className="flex items-center gap-2">
-          <img src={smkLogo} alt="SMK Technical Services" className="h-10 w-auto" />
+    <header className={cn("sticky top-0 z-50 bg-white transition-shadow", scrolled && "shadow-[0_1px_0_hsl(var(--border))]")}>
+      <div className="container flex h-[72px] items-center justify-between gap-6">
+        <a href="#top" className="shrink-0" aria-label="SMK Technical Services home">
+          <Logo withName markClassName="h-11" className="[&>span:last-child]:hidden sm:[&>span:last-child]:block" />
         </a>
 
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-foreground/80 hover:text-accent transition-colors"
-            >
-              {link.label}
+        <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
+          {navLinks.map((l) => (
+            <a key={l.href} href={l.href} className="text-[15px] font-medium text-foreground/80 transition-colors hover:text-primary">
+              {l.label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
-          <Link to="/auth">
-            <Button className="bg-accent text-accent-foreground hover:bg-smk-red-dark font-semibold rounded px-6">
-              Get a Quote
-            </Button>
+        <div className="hidden items-center gap-5 lg:flex">
+          <Link to="/auth" className="text-[15px] font-medium text-muted-foreground hover:text-primary">
+            Staff login
           </Link>
+          <Button asChild className="h-11 rounded-sm bg-smk-red px-6 text-[15px] font-semibold text-white hover:bg-smk-red-dark">
+            <a href="#contact">Request a quote</a>
+          </Button>
         </div>
 
         <button
-          className="md:hidden p-2 text-foreground"
+          className="-mr-2 rounded p-2 text-foreground lg:hidden"
           onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
         >
-          {open ? <X size={24} /> : <Menu size={24} />}
+          {open ? <X size={26} /> : <Menu size={26} />}
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-border bg-background animate-fade-in">
-          <nav className="container py-4 flex flex-col gap-3">
-            {navLinks.map((link) => (
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 overflow-y-auto border-t bg-white lg:hidden">
+          <nav className="container flex flex-col py-4" aria-label="Mobile">
+            {navLinks.map((l) => (
               <a
-                key={link.href}
-                href={link.href}
+                key={l.href}
+                href={l.href}
                 onClick={() => setOpen(false)}
-                className="text-sm font-medium text-foreground/80 hover:text-accent py-2"
+                className="border-b py-4 font-display text-2xl font-semibold text-foreground"
               >
-                {link.label}
+                {l.label}
               </a>
             ))}
-            <Button className="bg-accent text-accent-foreground hover:bg-smk-red-dark font-semibold rounded mt-2">
-              Get a Quote
+            <Button asChild className="mt-6 h-12 rounded-sm bg-smk-red text-base font-semibold text-white hover:bg-smk-red-dark">
+              <a href="#contact" onClick={() => setOpen(false)}>Request a quote</a>
             </Button>
+            <Link to="/auth" className="mt-4 py-2 text-center font-medium text-muted-foreground">
+              Staff login
+            </Link>
           </nav>
         </div>
       )}

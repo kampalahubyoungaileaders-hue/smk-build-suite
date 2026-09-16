@@ -1,382 +1,299 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { FolderKanban, ListTodo, Wallet, FileText, CalendarClock, ChevronRight } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { EmptyState, LoadingRows, PageHeader, SectionCard, StatCard, StatusBadge } from "@/components/dashboard/ui";
 import { Progress } from "@/components/ui/progress";
-import { Link } from "react-router-dom";
-import {
-  FolderKanban,
-  ListTodo,
-  Wallet,
-  Users,
-  TrendingUp,
-  AlertTriangle,
-  Clock,
-  ArrowRight,
-} from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { Button } from "@/components/ui/button";
+import { ACTIVE_PROJECT_STATUSES, projectStatus, taskStatus, toneClasses } from "@/lib/status";
+import { daysUntil, formatDate, formatUGX, formatUGXCompact, isOverdue } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-const STATUS_COLORS: Record<string, string> = {
-  planning: "bg-muted text-muted-foreground",
-  in_progress: "bg-blue-100 text-blue-700",
-  on_hold: "bg-yellow-100 text-yellow-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-destructive/10 text-destructive",
+import type { Row } from "@/lib/db";
+
+const greeting = () => {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 };
 
-const TASK_PIE_COLORS = ["hsl(213,52%,24%)", "hsl(217,91%,60%)", "hsl(142,71%,45%)", "hsl(0,84%,60%)"];
+const dueLabel = (due: string) => {
+  const d = daysUntil(due);
+  if (d < 0) return { text: `${-d} day${d === -1 ? "" : "s"} overdue`, danger: true };
+  if (d === 0) return { text: "Due today", danger: false };
+  if (d === 1) return { text: "Due tomorrow", danger: false };
+  if (d <= 14) return { text: `In ${d} days`, danger: false };
+  return { text: formatDate(due, { year: false }), danger: false };
+};
+
+const TASK_BAR_COLORS: Record<string, string> = {
+  todo: "bg-slate-400",
+  in_progress: "bg-blue-600",
+  blocked: "bg-red-600",
+  completed: "bg-emerald-600",
+};
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const [stats, setStats] = useState({ projects: 0, tasks: 0, budget: 0, team: 0 });
-  const [recentProjects, setRecentProjects] = useState<any[]>([]);
-  const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
-  const [tasksByStatus, setTasksByStatus] = useState<any[]>([]);
-  const [projectBudgets, setProjectBudgets] = useState<any[]>([]);
-  const [userRole, setUserRole] = useState<string>("");
+  const { profile, user, can } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Row[]>([]);
+  const [tasks, setTasks] = useState<Row[]>([]);
+  const [expenses, setExpenses] = useState<Row[]>([]);
+  const [invoices, setInvoices] = useState<Row[]>([]);
 
   useEffect(() => {
-    const load = async () => {
-      const [projectsRes, tasksRes, budgetsRes, teamRes, expensesRes] = await Promise.all([
-        supabase.from("projects").select("*"),
+    (async () => {
+      const [p, t, e, i] = await Promise.all([
+        supabase.from("projects").select("*").order("updated_at", { ascending: false }),
         supabase.from("project_tasks").select("*, projects(name)"),
-        supabase.from("project_budgets").select("*, projects(name)"),
-        supabase.from("team_members").select("*", { count: "exact", head: true }),
-        supabase.from("expenses").select("amount, status"),
+        supabase.from("expenses").select("project_id, amount, status"),
+        supabase.from("invoices").select("total_amount, status, due_date"),
       ]);
+      setProjects(p.data ?? []);
+      setTasks(t.data ?? []);
+      setExpenses(e.data ?? []);
+      setInvoices(i.data ?? []);
+      setLoading(false);
+    })();
+  }, []);
 
-      const projects = projectsRes.data || [];
-      const tasks = tasksRes.data || [];
-      const budgets = budgetsRes.data || [];
-      const expenses = expensesRes.data || [];
+  const activeProjects = projects.filter((p) => ACTIVE_PROJECT_STATUSES.includes(p.status));
+  const completedProjects = projects.filter((p) => p.status === "completed").length;
+  const openTasks = tasks.filter((t) => t.status !== "completed");
+  const overdueTasks = openTasks.filter((t) => isOverdue(t.due_date));
+  const approved = expenses.filter((e) => e.status === "approved");
+  const pendingExpenses = expenses.filter((e) => e.status === "pending");
+  const totalBudget = activeProjects.reduce((s, p) => s + Number(p.budget || 0), 0);
+  const spentOnActive = approved
+    .filter((e) => activeProjects.some((p) => p.id === e.project_id))
+    .reduce((s, e) => s + Number(e.amount || 0), 0);
+  const outstanding = invoices
+    .filter((i) => i.status === "sent" || i.status === "overdue")
+    .reduce((s, i) => s + Number(i.total_amount || 0), 0);
+  const overdueInvoices = invoices.filter(
+    (i) => i.status === "overdue" || (i.status === "sent" && isOverdue(i.due_date)),
+  ).length;
 
-      const totalBudget = projects.reduce((s: number, p: any) => s + Number(p.budget || 0), 0);
-      const totalExpenses = expenses
-        .filter((e: any) => e.status === "approved")
-        .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const budgetChart = activeProjects
+    .map((p) => ({
+      name: p.name.length > 18 ? `${p.name.slice(0, 17)}…` : p.name,
+      Budget: Number(p.budget || 0),
+      Spent: approved.filter((e) => e.project_id === p.id).reduce((s, e) => s + Number(e.amount || 0), 0),
+    }))
+    .filter((r) => r.Budget > 0 || r.Spent > 0)
+    .slice(0, 8);
 
-      setStats({
-        projects: projects.length,
-        tasks: tasks.length,
-        budget: totalBudget,
-        team: teamRes.count || 0,
-      });
+  const taskCounts = taskStatus.list.map((s) => ({
+    ...s,
+    count: tasks.filter((t) => t.status === s.value).length,
+  }));
 
-      // Recent projects
-      const sorted = [...projects].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setRecentProjects(sorted.slice(0, 5));
+  const upcoming = openTasks
+    .filter((t) => t.due_date)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))
+    .slice(0, 6);
 
-      // Upcoming tasks
-      const pending = tasks
-        .filter((t: any) => t.status !== "completed" && t.due_date)
-        .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
-      setUpcomingTasks(pending.slice(0, 6));
-
-      // Task status distribution
-      const statusCounts: Record<string, number> = {};
-      tasks.forEach((t: any) => {
-        statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
-      });
-      setTasksByStatus(
-        Object.entries(statusCounts).map(([name, value]) => ({
-          name: name.replace("_", " "),
-          value,
-        }))
-      );
-
-      // Budget vs Actual per project
-      const budgetByProject: Record<string, { name: string; estimated: number; actual: number }> = {};
-      budgets.forEach((b: any) => {
-        const pName = (b.projects as any)?.name || "Unknown";
-        if (!budgetByProject[b.project_id]) {
-          budgetByProject[b.project_id] = { name: pName, estimated: 0, actual: 0 };
-        }
-        budgetByProject[b.project_id].estimated += Number(b.estimated_amount || 0);
-        budgetByProject[b.project_id].actual += Number(b.actual_amount || 0);
-      });
-      setProjectBudgets(Object.values(budgetByProject).slice(0, 6));
-
-      // User role
-      if (user) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .limit(1);
-        if (roles && roles.length > 0) setUserRole(roles[0].role);
-      }
-    };
-    load();
-  }, [user]);
-
-  const statCards = [
-    {
-      label: "Active Projects",
-      value: stats.projects,
-      icon: FolderKanban,
-      color: "text-primary",
-      bg: "bg-primary/10",
-      href: "/dashboard/projects",
-    },
-    {
-      label: "Open Tasks",
-      value: stats.tasks,
-      icon: ListTodo,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-      href: "/dashboard/tasks",
-    },
-    {
-      label: "Total Budget",
-      value: `UGX ${(stats.budget / 1e6).toFixed(1)}M`,
-      icon: Wallet,
-      color: "text-green-600",
-      bg: "bg-green-50",
-      href: "/dashboard/finance",
-    },
-    {
-      label: "Team Members",
-      value: stats.team,
-      icon: Users,
-      color: "text-accent",
-      bg: "bg-accent/10",
-      href: "/dashboard/team",
-    },
-  ];
+  const firstName = (profile?.full_name || user?.email || "").split(/[\s@]/)[0];
+  const budgetPct = totalBudget ? Math.round((spentOnActive / totalBudget) * 100) : 0;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Welcome */}
-        <div>
-          <h2 className="text-xl font-bold text-foreground">
-            Welcome back{userRole ? `, ${userRole.replace("_", " ")}` : ""}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Here is an overview of your construction projects
-          </p>
+        <PageHeader
+          title={`${greeting()}${firstName ? `, ${firstName}` : ""}`}
+          description={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          actions={
+            can.manageProjects && (
+              <Button asChild>
+                <Link to="/dashboard/projects?new=1">New project</Link>
+              </Button>
+            )
+          }
+        />
+
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+          <StatCard
+            loading={loading}
+            label="Active projects"
+            icon={FolderKanban}
+            value={activeProjects.length}
+            hint={`${completedProjects} completed`}
+            href="/dashboard/projects"
+          />
+          <StatCard
+            loading={loading}
+            label="Open tasks"
+            icon={ListTodo}
+            value={openTasks.length}
+            hint={overdueTasks.length ? `${overdueTasks.length} overdue` : "Nothing overdue"}
+            emphasis={overdueTasks.length ? "danger" : undefined}
+            href="/dashboard/tasks"
+          />
+          <StatCard
+            loading={loading}
+            label="Budget used"
+            icon={Wallet}
+            value={`${budgetPct}%`}
+            hint={`${formatUGXCompact(spentOnActive)} of ${formatUGXCompact(totalBudget)}`}
+            emphasis={budgetPct > 100 ? "danger" : undefined}
+            href="/dashboard/finance"
+          />
+          <StatCard
+            loading={loading}
+            label="Unpaid invoices"
+            icon={FileText}
+            value={formatUGXCompact(outstanding)}
+            hint={
+              overdueInvoices
+                ? `${overdueInvoices} past due`
+                : pendingExpenses.length
+                  ? `${pendingExpenses.length} expense${pendingExpenses.length === 1 ? "" : "s"} to approve`
+                  : "All up to date"
+            }
+            emphasis={overdueInvoices ? "danger" : undefined}
+            href="/dashboard/finance"
+          />
         </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {statCards.map((s) => (
-            <Link to={s.href} key={s.label}>
-              <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                    {s.label}
-                  </span>
-                  <div className={`p-2 rounded-lg ${s.bg}`}>
-                    <s.icon size={16} className={s.color} />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-foreground">{s.value}</div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-
-        {/* Charts row */}
-        <div className="grid lg:grid-cols-2 gap-4">
-          {/* Budget vs Actual */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-sm text-foreground">Budget vs Actual by Project</h3>
-              <TrendingUp size={16} className="text-muted-foreground" />
-            </div>
-            {projectBudgets.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                No budget data yet
-              </p>
+        <div className="grid gap-4 xl:grid-cols-5">
+          <SectionCard title="Budget and approved spend" className="xl:col-span-3">
+            {loading ? (
+              <LoadingRows rows={3} />
+            ) : budgetChart.length === 0 ? (
+              <EmptyState
+                compact
+                icon={Wallet}
+                title="No budgets to compare yet"
+                description="Set a budget on a project and approve its expenses to see spend against budget here."
+              />
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={projectBudgets} barGap={2}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `${(v / 1e6).toFixed(0)}M`}
-                  />
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={budgetChart} barGap={3} margin={{ left: -8, right: 4 }}>
+                  <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} interval={0} />
+                  <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={(v) => formatUGXCompact(v, false)} />
                   <Tooltip
-                    formatter={(value: number) => `UGX ${value.toLocaleString()}`}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid hsl(var(--border))",
-                      fontSize: "12px",
-                    }}
+                    cursor={{ fill: "hsl(var(--muted))" }}
+                    formatter={(v: number) => formatUGX(v)}
+                    contentStyle={{ borderRadius: 6, border: "1px solid hsl(var(--border))", fontSize: 13 }}
                   />
-                  <Bar dataKey="estimated" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Estimated" />
-                  <Bar dataKey="actual" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name="Actual" />
+                  <Legend iconType="square" wrapperStyle={{ fontSize: 13 }} />
+                  <Bar dataKey="Budget" fill="hsl(var(--navy))" radius={[3, 3, 0, 0]} maxBarSize={36} />
+                  <Bar dataKey="Spent" fill="hsl(var(--smk-red))" radius={[3, 3, 0, 0]} maxBarSize={36} />
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </Card>
+          </SectionCard>
 
-          {/* Task Distribution */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-sm text-foreground">Task Distribution</h3>
-            </div>
-            {tasksByStatus.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No tasks yet</p>
+          <SectionCard title="Tasks by status" className="xl:col-span-2">
+            {loading ? (
+              <LoadingRows rows={3} />
+            ) : tasks.length === 0 ? (
+              <EmptyState compact icon={ListTodo} title="No tasks yet" description="Tasks you add to projects will be counted here." />
             ) : (
-              <div className="flex items-center gap-6">
-                <ResponsiveContainer width={160} height={160}>
-                  <PieChart>
-                    <Pie
-                      data={tasksByStatus}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={70}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {tasksByStatus.map((_, i) => (
-                        <Cell key={i} fill={TASK_PIE_COLORS[i % TASK_PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2 flex-1">
-                  {tasksByStatus.map((item, i) => (
-                    <div key={item.name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-sm"
-                          style={{ backgroundColor: TASK_PIE_COLORS[i % TASK_PIE_COLORS.length] }}
-                        />
-                        <span className="text-muted-foreground capitalize">{item.name}</span>
-                      </div>
-                      <span className="font-medium text-foreground">{item.value}</span>
-                    </div>
-                  ))}
+              <div className="space-y-5">
+                <div className="flex h-3 overflow-hidden rounded-full bg-muted" aria-hidden>
+                  {taskCounts.map((s) =>
+                    s.count ? (
+                      <div key={s.value} className={TASK_BAR_COLORS[s.value]} style={{ width: `${(s.count / tasks.length) * 100}%` }} />
+                    ) : null,
+                  )}
                 </div>
+                <ul className="divide-y">
+                  {taskCounts.map((s) => (
+                    <li key={s.value} className="flex items-center justify-between py-2.5 text-sm">
+                      <span className="flex items-center gap-2.5 text-foreground">
+                        <span className={cn("h-2.5 w-2.5 rounded-sm", TASK_BAR_COLORS[s.value])} />
+                        {s.label}
+                      </span>
+                      <span className="tabular font-semibold text-foreground">{s.count}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
-          </Card>
+          </SectionCard>
         </div>
 
-        {/* Recent Projects + Upcoming Tasks */}
-        <div className="grid lg:grid-cols-2 gap-4">
-          {/* Recent Projects */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-sm text-foreground">Recent Projects</h3>
-              <Link
-                to="/dashboard/projects"
-                className="text-xs text-accent hover:underline flex items-center gap-1"
-              >
-                View all <ArrowRight size={12} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <SectionCard
+            title="Active projects"
+            action={
+              <Link to="/dashboard/projects" className="flex items-center text-sm font-medium text-primary hover:underline">
+                All projects <ChevronRight size={16} />
               </Link>
-            </div>
-            {recentProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No projects yet</p>
+            }
+          >
+            {loading ? (
+              <LoadingRows />
+            ) : activeProjects.length === 0 ? (
+              <EmptyState compact icon={FolderKanban} title="No active projects" />
             ) : (
-              <div className="space-y-3">
-                {recentProjects.map((p) => (
-                  <Link
-                    key={p.id}
-                    to={`/dashboard/projects/${p.id}`}
-                    className="block"
-                  >
-                    <div className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-sm text-foreground truncate">{p.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {p.client_name || p.location || "No details"}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 ml-3">
-                        <Badge
-                          variant="secondary"
-                          className={`text-[10px] ${STATUS_COLORS[p.status] || ""}`}
-                        >
-                          {p.status?.replace("_", " ")}
-                        </Badge>
-                        <div className="w-16">
-                          <Progress value={p.progress || 0} className="h-1.5" />
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          {/* Upcoming Tasks */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-sm text-foreground">Upcoming Deadlines</h3>
-              <Link
-                to="/dashboard/tasks"
-                className="text-xs text-accent hover:underline flex items-center gap-1"
-              >
-                View all <ArrowRight size={12} />
-              </Link>
-            </div>
-            {upcomingTasks.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No upcoming tasks</p>
-            ) : (
-              <div className="space-y-2">
-                {upcomingTasks.map((t) => {
-                  const isOverdue = t.due_date && new Date(t.due_date) < new Date();
-                  return (
-                    <div
-                      key={t.id}
-                      className="flex items-center justify-between py-2 border-b border-border last:border-0"
+              <ul className="-mx-2">
+                {activeProjects.slice(0, 5).map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      to={`/dashboard/projects/${p.id}`}
+                      className="flex items-center gap-4 rounded-md px-2 py-3 transition-colors hover:bg-muted"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-sm text-foreground truncate">
-                          {t.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {(t.projects as any)?.name}
+                        <div className="truncate font-medium text-foreground">{p.name}</div>
+                        <div className="truncate text-sm text-muted-foreground">
+                          {[p.client_name, p.location].filter(Boolean).join(", ") || "No client or location set"}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-3">
-                        {isOverdue && <AlertTriangle size={14} className="text-destructive" />}
-                        <span
-                          className={`text-xs font-medium ${
-                            isOverdue ? "text-destructive" : "text-muted-foreground"
-                          }`}
-                        >
-                          <Clock size={12} className="inline mr-1" />
-                          {new Date(t.due_date).toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </span>
+                      <StatusBadge tone={projectStatus.tone(p.status)} className="hidden sm:inline-flex">
+                        {projectStatus.label(p.status)}
+                      </StatusBadge>
+                      <div className="w-20 shrink-0">
+                        <div className="tabular mb-1 text-right text-xs font-medium text-foreground">{p.progress || 0}%</div>
+                        <Progress value={p.progress || 0} className="h-1.5" />
                       </div>
-                    </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SectionCard>
+
+          <SectionCard
+            title="Upcoming deadlines"
+            action={
+              <Link to="/dashboard/tasks" className="flex items-center text-sm font-medium text-primary hover:underline">
+                All tasks <ChevronRight size={16} />
+              </Link>
+            }
+          >
+            {loading ? (
+              <LoadingRows />
+            ) : upcoming.length === 0 ? (
+              <EmptyState compact icon={CalendarClock} title="No upcoming deadlines" description="Open tasks with a due date will show here." />
+            ) : (
+              <ul className="divide-y">
+                {upcoming.map((t) => {
+                  const due = dueLabel(t.due_date);
+                  return (
+                    <li key={t.id} className="flex items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium text-foreground">{t.title}</div>
+                        <div className="truncate text-sm text-muted-foreground">{t.projects?.name}</div>
+                      </div>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
+                          due.danger ? toneClasses.danger : toneClasses.neutral,
+                        )}
+                      >
+                        {due.text}
+                      </span>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
-          </Card>
+          </SectionCard>
         </div>
       </div>
     </DashboardLayout>
