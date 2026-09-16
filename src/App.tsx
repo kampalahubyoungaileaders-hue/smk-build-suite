@@ -6,8 +6,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute, { FullScreenLoader } from "@/components/ProtectedRoute";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import SiteLayout from "@/components/site/SiteLayout";
+import Home from "./pages/site/Home.tsx";
+import About from "./pages/site/About.tsx";
+import Services from "./pages/site/Services.tsx";
+import ServiceDetail from "./pages/site/ServiceDetail.tsx";
+import ProjectsPage from "./pages/site/Projects.tsx";
+import ProjectCase from "./pages/site/ProjectCase.tsx";
+import Contact from "./pages/site/Contact.tsx";
+import SiteNotFound from "./pages/site/SiteNotFound.tsx";
 
 // The management system is loaded on demand so public visitors only download the website.
 const Auth = lazy(() => import("./pages/Auth.tsx"));
@@ -31,7 +38,16 @@ const App = () => (
         <BrowserRouter>
           <Suspense fallback={<FullScreenLoader />}>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route element={<SiteLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/services/:slug" element={<ServiceDetail />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/projects/:slug" element={<ProjectCase />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="*" element={<SiteNotFound />} />
+              </Route>
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
@@ -41,7 +57,6 @@ const App = () => (
               <Route path="/dashboard/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
               <Route path="/dashboard/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/dashboard/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

@@ -1,9 +1,48 @@
 # SMK Build Suite — polish and review notes
 
+## Public website (new)
+
+The public site is now a full multi-page website:
+
+| Page | Address |
+|------|---------|
+| Home | `/` |
+| About | `/about` |
+| Services, plus one page per service | `/services`, `/services/construction` etc. |
+| Projects, plus one case study per project | `/projects`, `/projects/smk-heights-residential` etc. |
+| Contact with quote form | `/contact` |
+
+- **Content lives in three files:** `src/content/company.ts`, `src/content/services.ts` and `src/content/projects.ts`.
+  Add a project or change a service there, and every page updates.
+- **The quote form** opens WhatsApp with the enquiry filled in. The website does not store any data.
+- **Fonts are self-hosted** (`src/assets/fonts`), so the site no longer depends on Google Fonts.
+
+### Copy to confirm before launch
+
+These statements were written as reasonable defaults. Check that each is true for SMK, or edit it:
+
+- The first site visit and meeting are free (footer band, Services questions).
+- "We usually reply the same working day" (contact page).
+- The "Building from abroad" offer on the home page: photo/video updates and milestone payments.
+- Project names and descriptions in `src/content/projects.ts`, which came from the old site.
+- Company figures and testimonials in `src/content/company.ts`.
+
+## Deploying to Netlify
+
+`netlify.toml` is included, so Netlify picks up the settings automatically:
+
+- Build command: `npm run build`
+- Publish directory: `dist`
+- All paths are routed to the app, so `/projects` and `/dashboard` work when opened directly or refreshed.
+
+The Supabase address and key are read from `.env` in the repo. If you remove `.env` later, add
+`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` under
+**Site configuration → Environment variables** in Netlify. Without them the page loads blank.
+
 ## Before you deploy
 
 1. **Apply the new database migration.** The app now expects
-   `supabase/migrations/20260916120000_access_control_and_finance_rules.sql`.
+   `supabase/migrations/20260916111158_…sql` (plus the hardening step `20260916111212_…sql` Lovable added).
    In Lovable this happens when you sync the repo; otherwise run `supabase db push`
    or paste the file into the Supabase SQL editor.
    - On an existing system, the oldest account is promoted to **admin**.

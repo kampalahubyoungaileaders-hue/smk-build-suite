@@ -1,21 +1,3 @@
--- =====================================================================
--- SMK: access control and finance integrity
---
--- Fixes found in review:
---  1. Nobody was ever given a role, so no one could create projects.
---     -> The first account becomes admin; admins approve everyone else.
---  2. Anyone who signed up could read every project, invoice and payment.
---     -> Reading data now requires an approved role.
---  3. Site supervisors could insert expenses already marked "approved",
---     and managers could approve their own expenses.
---  4. Invoice totals were trusted from the browser; invoice numbers could
---     repeat; payments never updated invoice status.
---  5. Assigned users could rewrite any field of a task, not just status.
--- =====================================================================
-
--- ---------------------------------------------------------------------
--- Helper functions
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.is_staff(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -38,9 +20,6 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.is_staff(uuid) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.is_manager(uuid) FROM anon;
 
--- ---------------------------------------------------------------------
--- 1. Bootstrap an administrator
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER
@@ -51,8 +30,6 @@ BEGIN
   VALUES (NEW.id, COALESCE(NULLIF(NEW.raw_user_meta_data->>'full_name', ''), NEW.email))
   ON CONFLICT (user_id) DO NOTHING;
 
-  -- The very first account on a fresh system becomes the administrator.
-  -- Everyone after that waits for an administrator to grant a role.
   IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE role = 'admin') THEN
     INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'admin')
     ON CONFLICT DO NOTHING;
@@ -62,14 +39,11 @@ BEGIN
 END;
 $$;
 
--- Backfill any missing profiles.
 INSERT INTO public.profiles (user_id, full_name)
 SELECT u.id, COALESCE(NULLIF(u.raw_user_meta_data->>'full_name', ''), u.email)
 FROM auth.users u
 WHERE NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.user_id = u.id);
 
--- Existing systems with no administrator: promote the oldest account.
--- CHECK after running: SELECT * FROM public.user_roles;
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE role = 'admin') THEN
@@ -79,7 +53,6 @@ BEGIN
   END IF;
 END $$;
 
--- Admin-only role management. Passing NULL removes access.
 CREATE OR REPLACE FUNCTION public.set_user_role(_user_id uuid, _role public.app_role)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER
@@ -103,9 +76,6 @@ $$;
 REVOKE ALL ON FUNCTION public.set_user_role(uuid, public.app_role) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.set_user_role(uuid, public.app_role) TO authenticated;
 
--- ---------------------------------------------------------------------
--- 2. Only approved staff can read company data
--- ---------------------------------------------------------------------
 DROP POLICY IF EXISTS "Users can view own roles" ON public.user_roles;
 CREATE POLICY "Users and staff can view roles" ON public.user_roles
   FOR SELECT TO authenticated
@@ -156,9 +126,6 @@ DROP POLICY IF EXISTS "Authenticated users can view payments" ON public.payments
 CREATE POLICY "Staff can view payments" ON public.payments
   FOR SELECT TO authenticated USING (public.is_staff(auth.uid()));
 
--- ---------------------------------------------------------------------
--- 3. Projects
--- ---------------------------------------------------------------------
 ALTER TABLE public.projects ALTER COLUMN created_by SET DEFAULT auth.uid();
 
 ALTER TABLE public.projects DROP CONSTRAINT IF EXISTS projects_budget_nonnegative;
@@ -169,9 +136,6 @@ ALTER TABLE public.projects DROP CONSTRAINT IF EXISTS projects_dates_ordered;
 ALTER TABLE public.projects ADD CONSTRAINT projects_dates_ordered
   CHECK (start_date IS NULL OR end_date IS NULL OR end_date >= start_date) NOT VALID;
 
--- ---------------------------------------------------------------------
--- 4. Tasks: managers manage, assignees may only move status/progress
--- ---------------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins PMs and assigned can manage tasks" ON public.project_tasks;
 
 CREATE POLICY "Managers can create tasks" ON public.project_tasks
@@ -208,9 +172,6 @@ DROP TRIGGER IF EXISTS guard_task_update ON public.project_tasks;
 CREATE TRIGGER guard_task_update BEFORE UPDATE ON public.project_tasks
   FOR EACH ROW EXECUTE FUNCTION public.guard_task_update();
 
--- ---------------------------------------------------------------------
--- 5. Expenses: approval workflow that can't be bypassed
--- ---------------------------------------------------------------------
 ALTER TABLE public.expenses ALTER COLUMN submitted_by SET DEFAULT auth.uid();
 
 ALTER TABLE public.expenses DROP CONSTRAINT IF EXISTS expenses_status_valid;
@@ -246,8 +207,6 @@ BEGIN
     END IF;
 
     IF NEW.status IN ('approved', 'rejected') THEN
-      -- Separation of duties: managers can't decide on their own expenses.
-      -- Administrators are exempt so a one-admin company isn't blocked.
       IF NEW.submitted_by = auth.uid() AND NOT is_admin THEN
         RAISE EXCEPTION 'You can''t approve or reject your own expense. Ask another manager.'
           USING ERRCODE = '42501';
@@ -272,9 +231,6 @@ DROP TRIGGER IF EXISTS guard_expense_update ON public.expenses;
 CREATE TRIGGER guard_expense_update BEFORE UPDATE ON public.expenses
   FOR EACH ROW EXECUTE FUNCTION public.guard_expense_update();
 
--- ---------------------------------------------------------------------
--- 6. Invoices: server-side totals, valid statuses, unique numbers
--- ---------------------------------------------------------------------
 ALTER TABLE public.invoices ALTER COLUMN created_by SET DEFAULT auth.uid();
 
 ALTER TABLE public.invoices DROP CONSTRAINT IF EXISTS invoices_status_valid;
@@ -317,9 +273,6 @@ BEGIN
   END IF;
 END $$;
 
--- ---------------------------------------------------------------------
--- 7. Payments: validate links and keep invoice status in sync
--- ---------------------------------------------------------------------
 ALTER TABLE public.payments ALTER COLUMN recorded_by SET DEFAULT auth.uid();
 
 ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS payments_type_valid;
@@ -402,9 +355,6 @@ DROP TRIGGER IF EXISTS sync_invoice_payment_status ON public.payments;
 CREATE TRIGGER sync_invoice_payment_status AFTER INSERT OR UPDATE OR DELETE ON public.payments
   FOR EACH ROW EXECUTE FUNCTION public.sync_invoice_payment_status();
 
--- ---------------------------------------------------------------------
--- 8. Indexes for the queries the app runs
--- ---------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS project_tasks_project_id_idx ON public.project_tasks (project_id);
 CREATE INDEX IF NOT EXISTS project_tasks_assigned_to_idx ON public.project_tasks (assigned_to);
 CREATE INDEX IF NOT EXISTS project_budgets_project_id_idx ON public.project_budgets (project_id);
